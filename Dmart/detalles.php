@@ -12,7 +12,7 @@ $id = isset($_GET['id']) ? $_GET['id'] : '';
 $token = isset($_GET['token']) ? $_GET['token'] : '';
 
 // Si 'id' o 'token' no están presentes, se muestra un mensaje de error y se detiene la ejecución
-if($id == '' || $token == ''){
+if ($id == '' || $token == '') {
     echo 'Error de petición';
     exit;
 } else {
@@ -20,14 +20,13 @@ if($id == '' || $token == ''){
     $token_tmp = hash_hmac('sha1', $id, KEY_TOKEN);
 
     // Se compara el token generado con el token recibido
-    if($token == $token_tmp){
+    if ($token == $token_tmp) {
         // Consulta a la base de datos para verificar si el producto con el ID dado existe y está activo
         $sql = $con->prepare("SELECT count(id) FROM productos WHERE id=? AND activo=1");
         $sql->execute([$id]);
 
         // Si el producto existe, se obtienen sus detalles
-        if($sql->fetchColumn() > 0){
-
+        if ($sql->fetchColumn() > 0) {
             // Se realiza una consulta para obtener los datos del producto: nombre, descripción, precio y descuento
             $sql = $con->prepare("SELECT nombre, descripcion, precio, descuento FROM productos WHERE id=? AND activo=1 LIMIT 1");
             $sql->execute([$id]);
@@ -43,11 +42,11 @@ if($id == '' || $token == ''){
             $precio_desc = $precio - (($precio * $descuento) / 100);
 
             // Se define la ruta de la carpeta de imágenes del producto
-            $dir_images = 'images/productos/'.$id.'/';
+            $dir_images = 'images/productos/' . $id . '/';
             $rutaImg = $dir_images . 'principal.png';
 
             // Si la imagen principal no existe, se usa una imagen por defecto
-            if(!file_exists($rutaImg)){
+            if (!file_exists($rutaImg)) {
                 $rutaImg = 'images/no-photo.png';
             }
 
@@ -56,9 +55,9 @@ if($id == '' || $token == ''){
             $dir = dir($dir_images);
 
             // Se recorre el directorio para encontrar otras imágenes (.jpg o .jpeg) y agregarlas al array
-            while(($archivo = $dir->read()) != false){
-                if($archivo != 'principal.png' && (strpos($archivo, 'jpg') || strpos($archivo, 'jpeg'))){
-                    $imagenes[] = $dir_images.$archivo;
+            while (($archivo = $dir->read()) != false) {
+                if ($archivo != 'principal.png' && (strpos($archivo, 'jpg') || strpos($archivo, 'jpeg'))) {
+                    $imagenes[] = $dir_images . $archivo;
                 }
             }
             // Se cierra el directorio
@@ -80,11 +79,11 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dmart</title>
+    <title>Detalles del Producto</title>
 
     <!-- Fuentes y estilos de Bootstrap -->
     <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
@@ -93,7 +92,6 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Archivo de estilos personalizados -->
     <link rel="stylesheet" type="text/css" href="css/estilos.css">
-
 </head>
 <body>
     <header>
@@ -197,10 +195,10 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
                     <h2> <?php echo $nombre; ?> </h2>
 
                     <!-- Mostrar precio con descuento -->
-                    <?php if($descuento > 0){ ?>
+                    <?php if ($descuento > 0) { ?>
                         <p><del><?php echo MONEDA . number_format($precio, 2, '.', ','); ?> </del> </p>
                         <h2><?php echo MONEDA . number_format($precio_desc, 2, '.', ','); ?>
-                        <small class="text-success"> <?php echo $descuento; ?>% descuento </small>
+                            <small class="text-success"> <?php echo $descuento; ?>% descuento </small>
                         </h2>
                     <?php } else { ?>
                         <!-- Mostrar precio sin descuento -->

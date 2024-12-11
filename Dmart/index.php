@@ -1,16 +1,31 @@
-<?php 
-// Incluye los archivos que contienen la configuración de la base de datos y las constantes
+<?php
+// Inicia la sesión
+session_start();
+
+// Verifica si el usuario está autenticado
+if (!isset($_SESSION['id_usuario'])) {
+    header("Location: login.php"); // Redirige al login si no está autenticado
+    exit;
+}
+
+// Incluye los archivos de configuración de la base de datos y las constantes
 require 'config/database.php';
 require 'config/config.php';
 
-// Crea una nueva instancia de la conexión a la base de datos
+// Conexión a la base de datos
 $db = new Database();
 $con = $db->conectar();
 
-// Prepara la consulta SQL para obtener productos activos (activo=1)
+// Obtiene el rol del usuario autenticado (cliente o admin)
+$id_usuario = $_SESSION['id_usuario'];
+$sql = $con->prepare("SELECT rol FROM usuarios WHERE id_usuario = ?");
+$sql->execute([$id_usuario]);
+$usuario = $sql->fetch(PDO::FETCH_ASSOC);
+
+// Prepara la consulta SQL para obtener productos activos
 $sql = $con->prepare("SELECT id, nombre, precio FROM productos WHERE activo=1");
-$sql->execute(); // Ejecuta la consulta
-$resultado = $sql->fetchAll(PDO::FETCH_ASSOC); // Almacena los resultados en un array asociativo
+$sql->execute();
+$resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -18,26 +33,25 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC); // Almacena los resultados en un 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cinnamoroll</title>
+    <title>Cinnamoroll Sweet Shop</title>
 
-    <!-- Enlace a Google Fonts para la fuente "Lobster" -->
+    <!-- Fuentes y Bootstrap -->
     <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
-
-    <!-- Enlace a Bootstrap para el diseño responsive -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-
-    <!-- Enlace a un archivo CSS personalizado -->
-    <link rel="stylesheet" type="text/css" href="css/estilos.css">
-</head>
-
-<body>
-    <style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
         /* Define el estilo para la fuente global y elimina márgenes */
         body, html {
             height: 100%;
             margin: 0;
             font-family: 'Lobster', cursive; /* Usa la fuente Lobster */
+            background-color: #ffe4e1;
         }
+        .card-img-top {
+            height: 400px; /* Ajusta según el diseño */
+            object-fit: cover; /* Recorta proporcionalmente las imágenes */
+            width: 400%; /* Asegura que cubran todo el ancho de la tarjeta */
+        }
+
 
         /* Fondo animado con gradiente de colores */
         .animated-background {
@@ -67,11 +81,12 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC); // Almacena los resultados en un 
 
         /* Estilos para el contenido (texto, etc.) */
         .content {
-            z-index: 1;
+            z-index: 3;
             position: relative;
-            color: white;
+            color: black;
             text-align: center;
-            padding: 100px;
+            padding: 20px;
+            margin-top: 2px;
         }
 
         /* Estilos del header con fondo azul cielo */
@@ -124,83 +139,84 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC); // Almacena los resultados en un 
             animation: button-swing 0.5s ease-in-out infinite;
         }
     </style>
+</head>
 
-    <!-- Inicio del encabezado -->
-    <header>
-        <div class="navbar navbar-expand_lg navbar-dark bg-sky-blue shadow-sm">
-            <div class="container">
-                <!-- Logo e imagen con animación de oscilación -->
-                <a href="#" class="navbar-brand">
-                    <img src="cinnamoroll.png" alt="Cinnamoroll" class="swing-image">
-                    <strong class="custom-font swing-image">Cinnamoroll Sweet Shop</strong>
-                </a>
+<body>
+    <!-- Fondo animado 
+    <div class="animated-background"></div>
+    -->
 
-                <!-- Botón para colapsar el menú en pantallas pequeñas -->
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <!-- Menú de navegación -->
-                <div class="collapse navbar-collapse" id="navbarHeader">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a href="#" class="nav-link active">Catalogo</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link active">Contacto</a>
-                        </li>
-                    </ul>
+    <!-- Encabezado -->
+    <header class="navbar navbar-expand-lg navbar-dark bg-sky-blue shadow-sm">
+        <div class="container">
+            <a href="#" class="navbar-brand">
+                <img src="cinnamoroll.png" alt="Cinnamoroll" class="swing-image">
+                <strong class="custom-font swing-image">Cinnamoroll Sweet Shop</strong>
+            </a>
+            <div class="collapse navbar-collapse" id="navbarHeader">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!--    <li class="nav-item"><a href="#" class="nav-link active">Catálogo</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active">Contacto</a></li>-->
+                </ul>
+                <div>
+                    <?php if ($usuario['rol'] === 'admin') { ?>
+                        <a href="admin_productos.php" class="btn btn-success">Administrar Productos</a>
+                    <?php } ?>
+                    <a href="logout.php" class="btn btn-danger">Cerrar Sesión</a>
                 </div>
             </div>
         </div>
     </header>
-    <!-- Fin del encabezado -->
 
-    <!-- Fondo animado (opcional) -->
-    <!-- <div class="animated-background"></div> -->
-
-    <!-- Cuerpo principal: Mostrar productos -->
-    <main>
-        <div class="container">
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-                <?php  
-                // Recorre cada producto del resultado y los muestra en una tarjeta (card)
-                foreach ($resultado as $row) {
-                ?>
-
+    <!-- Cuerpo principal -->
+    <main class="container content">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            <?php foreach ($resultado as $row) { ?>
                 <div class="col">
                     <div class="card shadow-sm h-100">
                         <?php 
                         $id = $row['id'];
-                        // Busca la imagen del producto, si no existe, usa una imagen por defecto
-                        $image = "images/productos/" . $id . "/principal.png";
-                        if (!file_exists($image)) {
-                            $image = "images/no-photo.png";
-                        }
+                        $image = "images/productos/$id/principal.png";
+                        if (!file_exists($image)) $image = "images/no-photo.png";
                         ?>
-
-                        <!-- Muestra la imagen del producto -->
-                        <img src=" <?php echo $image; ?> " class="card-img-top img-fluid rounded d-block w-100">
+                        <img src="<?php echo $image; ?>" class="card-img-top img-fluid rounded d-block w-100">
                         <div class="card-body">
-                            <!-- Nombre y precio del producto -->
                             <h5 class="card-title"><?php echo $row['nombre']; ?></h5>
-                            <p class="card-text">$ <?php echo number_format($row['precio'], 2, '.', ','); ?></p>
+                            <p class="card-text">$<?php echo number_format($row['precio'], 2, '.', ','); ?></p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <!-- Botones de detalles y agregar al carrito -->
-                                <div class="btn-group">
-                                    <a href="detalles.php?id=<?php echo $row['id']; ?>&token=<?php echo hash_hmac('sha1', $row['id'], KEY_TOKEN); ?>" class="btn btn-primary">Detalles</a>
-                                </div>
-                                <div class="btn-group">
-                                    <a href="" class="btn btn-success">Agregar</a>
-                                </div>
+                                <a href="detalles.php?id=<?php echo $row['id']; ?>&token=<?php echo hash_hmac('sha1', $row['id'], KEY_TOKEN); ?>" class="btn btn-primary">Detalles</a>
+                                <a href="#" class="btn btn-success">Agregar</a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <?php } ?>
-            </div>
+            <?php } ?>
         </div>
     </main>
+<script>
+    const music = document.getElementById('backgroundMusic');
+    const toggleButton = document.getElementById('toggleMusicButton');
+
+    // Cambiar el estado de reproducción de la música al hacer clic
+    toggleButton.addEventListener('click', () => {
+        if (music.paused) {
+            music.play();
+            toggleButton.textContent = 'Apagar Música';
+        } else {
+            music.pause();
+            toggleButton.textContent = 'Encender Música';
+        }
+    });
+</script>
+<audio id="backgroundMusic" autoplay loop>
+    <source src="audio/Industrial Fields.mp3" type="audio/mpeg">
+    Tu navegador no soporta la reproducción de audio.
+</audio>
+
+<!-- Botón para encender/apagar la música -->
+<div class="text-center mt-3">
+    <button id="toggleMusicButton" class="btn btn-primary">Apagar Música</button>
+</div>
 
 </body>
 </html>
