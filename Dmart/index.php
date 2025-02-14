@@ -1,222 +1,226 @@
-<?php
-// Inicia la sesión
-session_start();
-
-// Verifica si el usuario está autenticado
-if (!isset($_SESSION['id_usuario'])) {
-    header("Location: login.php"); // Redirige al login si no está autenticado
-    exit;
-}
-
-// Incluye los archivos de configuración de la base de datos y las constantes
+<?php 
 require 'config/database.php';
 require 'config/config.php';
 
-// Conexión a la base de datos
 $db = new Database();
 $con = $db->conectar();
 
-// Obtiene el rol del usuario autenticado (cliente o admin)
-$id_usuario = $_SESSION['id_usuario'];
-$sql = $con->prepare("SELECT rol FROM usuarios WHERE id_usuario = ?");
-$sql->execute([$id_usuario]);
-$usuario = $sql->fetch(PDO::FETCH_ASSOC);
-
-// Prepara la consulta SQL para obtener productos activos
 $sql = $con->prepare("SELECT id, nombre, precio FROM productos WHERE activo=1");
 $sql->execute();
 $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cinnamoroll Sweet Shop</title>
-
-    <!-- Fuentes y Bootstrap -->
-    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cinnamoroll Sweet Shop</title>
+  
+  <!-- Google Fonts y Bootstrap CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <link rel="stylesheet" type="text/css" href="css/estilos.css">
+  
   <style>
-        /* Define el estilo para la fuente global y elimina márgenes */
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: 'Lobster', cursive; /* Usa la fuente Lobster */
-            background-color: #ffe4e1;
-        }
-        .card-img-top {
-            height: 400px; /* Ajusta según el diseño */
-            object-fit: cover; /* Recorta proporcionalmente las imágenes */
-            width: 400%; /* Asegura que cubran todo el ancho de la tarjeta */
-        }
+    /* 🎨 FONDO ANIMADO */
+    body, html {
+      height: 100%;
+      margin: 0;
+      font-family: 'Lobster', cursive;
+      background: linear-gradient(-45deg, #ffdde1, #ee9ca7, #ffdde1, #ffebf7);
+      background-size: 400% 400%;
+      animation: gradientBG 10s ease infinite;
+    }
 
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-        /* Fondo animado con gradiente de colores */
-        .animated-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(300deg, #87CEEB, #6DD5ED, #5333ED); /* Degradado de azul */
-            background-size: 600% 600%; /* Hace que el gradiente se mueva suavemente */
-            animation: gradient-animation 10s ease infinite; /* Animación continua del fondo */
-            z-index: -1; /* Coloca el fondo detrás del contenido */
-        }
+    /* 🏪 HEADER */
+    .bg-sky-blue {
+      background-color: #87CEEB;
+    }
 
-        /* Animación de gradiente */
-        @keyframes gradient-animation {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
+    .custom-font {
+      color: white;
+      font-size: 24px;
+    }
 
-        /* Estilos para el contenido (texto, etc.) */
-        .content {
-            z-index: 3;
-            position: relative;
-            color: black;
-            text-align: center;
-            padding: 20px;
-            margin-top: 2px;
-        }
+    .swing-image {
+      animation: swing 1s ease-in-out infinite;
+      height: 75px;
+      transform-origin: bottom;
+    }
 
-        /* Estilos del header con fondo azul cielo */
-        .bg-sky-blue {
-            background-color: #87CEEB;
-        }
+    @keyframes swing {
+      0% { transform: rotateX(0); }
+      50% { transform: rotateX(40deg); }
+      100% { transform: rotateX(0); }
+    }
 
-        /* Animación de oscilación de la imagen */
-        @keyframes swing {
-            0% {
-                transform: rotateX(0);
-            }
-            50% {
-                transform: rotateX(40deg);
-            }
-            100% {
-                transform: rotateX(0);
-            }
-        }
+    /* 🛍️ ESTILOS DE LAS TARJETAS */
+    .content {
+      margin-top: 50px;
+    }
 
-        /* Fuente personalizada para el texto del header */
-        .custom-font {
-            font-family: 'Lobster', cursive;
-            font-size: 24px;
-            color: white;
-        }
+    .card {
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: #ffffff;
+      overflow: hidden;
+      position: relative;
+    }
 
-        /* Aplicar la animación de oscilación a la imagen */
-        .swing-image {
-            animation: swing 1s ease-in-out infinite;
-            height: 75px;
-            transform-origin: bottom;
-        }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
 
-        /* Oscilación de los botones al pasar el cursor por encima */
-        @keyframes button-swing {
-            0% {
-                transform: translateX(0);
-            }
-            50% {
-                transform: translateX(5px);
-            }
-            100% {
-                transform: translateX(0);
-            }
-        }
+    .card img {
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+    }
 
-        /* Aplica la animación a los botones cuando el cursor pasa sobre ellos */
-        .btn:hover {
-            animation: button-swing 0.5s ease-in-out infinite;
-        }
-    </style>
+    .card-body {
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* 🎮 ANIMACIÓN SUAVE EN LOS BOTONES */
+    @keyframes button-move {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .btn-hover:hover {
+      animation: button-move 0.4s ease-in-out infinite;
+    }
+    
+    /* 🎵 BOTÓN DE MÚSICA */
+    #toggleMusicButton {
+      margin-left: 15px;
+    }
+
+    /* 🎨 MODAL PARA DETALLES CON COLOR ALEATORIO */
+    .modal-lg {
+      max-width: 80%;
+    }
+
+    #modalDetalles {
+      transition: background-color 0.5s ease-in-out;
+    }
+
+    #modalDetalles iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+    }
+  </style>
 </head>
-
 <body>
-    <!-- Fondo animado 
-    <div class="animated-background"></div>
-    -->
+  <!-- 🏠 HEADER -->
+  <header class="navbar navbar-expand-lg navbar-dark bg-sky-blue shadow-sm">
+    <div class="container">
+      <a href="#" class="navbar-brand">
+        <img src="cinnamoroll.png" alt="Cinnamoroll" class="swing-image">
+        <strong class="custom-font">Cinnamoroll Sweet Shop</strong>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarHeader">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a href="#" class="nav-link active">Catálogo</a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link active">Contacto</a>
+          </li>
+        </ul>
+        <button id="toggleMusicButton" class="btn btn-secondary">Apagar Música</button>
+        <a href="logout.php" class="btn btn-danger ms-2">Cerrar Sesión</a>
+      </div>
+    </div>
+  </header>
 
-    <!-- Encabezado -->
-    <header class="navbar navbar-expand-lg navbar-dark bg-sky-blue shadow-sm">
-        <div class="container">
-            <a href="#" class="navbar-brand">
-                <img src="cinnamoroll.png" alt="Cinnamoroll" class="swing-image">
-                <strong class="custom-font swing-image">Cinnamoroll Sweet Shop</strong>
-            </a>
-            <div class="collapse navbar-collapse" id="navbarHeader">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <!--    <li class="nav-item"><a href="#" class="nav-link active">Catálogo</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link active">Contacto</a></li>-->
-                </ul>
-                <div>
-                    <?php if ($usuario['rol'] === 'admin') { ?>
-                        <a href="admin_productos.php" class="btn btn-success">Administrar Productos</a>
-                    <?php } ?>
-                    <a href="logout.php" class="btn btn-danger">Cerrar Sesión</a>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Cuerpo principal -->
-    <main class="container content">
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-            <?php foreach ($resultado as $row) { ?>
-                <div class="col">
-                    <div class="card shadow-sm h-100">
-                        <?php 
-                        $id = $row['id'];
-                        $image = "images/productos/$id/principal.png";
-                        if (!file_exists($image)) $image = "images/no-photo.png";
-                        ?>
-                        <img src="<?php echo $image; ?>" class="card-img-top img-fluid rounded d-block w-100">
-                        <div class="card-body">
-                            <h5 class="card-title"><?php echo $row['nombre']; ?></h5>
-                            <p class="card-text">$<?php echo number_format($row['precio'], 2, '.', ','); ?></p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <a href="detalles.php?id=<?php echo $row['id']; ?>&token=<?php echo hash_hmac('sha1', $row['id'], KEY_TOKEN); ?>" class="btn btn-primary">Detalles</a>
-                                <a href="#" class="btn btn-success">Agregar</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php } ?>
-        </div>
-    </main>
-<script>
-    const music = document.getElementById('backgroundMusic');
-    const toggleButton = document.getElementById('toggleMusicButton');
-
-    // Cambiar el estado de reproducción de la música al hacer clic
-    toggleButton.addEventListener('click', () => {
-        if (music.paused) {
-            music.play();
-            toggleButton.textContent = 'Apagar Música';
-        } else {
-            music.pause();
-            toggleButton.textContent = 'Encender Música';
-        }
-    });
-</script>
-<audio id="backgroundMusic" autoplay loop>
-    <source src="audio/Industrial Fields.mp3" type="audio/mpeg">
+  <!-- 🎵 AUDIO DE FONDO -->
+  <audio id="backgroundMusic" autoplay loop>
+    <source src="audio/Shop Channel.mp3" type="audio/mpeg">
     Tu navegador no soporta la reproducción de audio.
-</audio>
+  </audio>
 
-<!-- Botón para encender/apagar la música -->
-<div class="text-center mt-3">
-    <button id="toggleMusicButton" class="btn btn-primary">Apagar Música</button>
-</div>
+  <!-- 🛒 CONTENIDO PRINCIPAL -->
+  <main>
+    <div class="container content">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        <?php foreach ($resultado as $row) { ?>
+          <div class="col">
+            <div class="card h-100">
+              <?php 
+                $id = $row['id'];
+                $image = "images/productos/" . $id . "/principal.png";
+                if (!file_exists($image)) { $image = "images/no-photo.png"; }
+              ?>
+              <img src="<?php echo $image; ?>" class="card-img-top img-fluid">
+              <div class="card-body">
+                <h5 class="card-title"><?php echo $row['nombre']; ?></h5>
+                <p class="card-text">$<?php echo number_format($row['precio'], 2, '.', ','); ?></p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-primary btn-sm btn-hover detalles-btn" 
+                          data-id="<?php echo $row['id']; ?>" 
+                          data-token="<?php echo hash_hmac('sha1', $row['id'], KEY_TOKEN); ?>">Detalles</button>
+                  <button class="btn btn-success btn-sm btn-hover agregar-btn">Agregar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php } ?>
+      </div>
+    </div>
+  </main>
+
+  <!-- 🛍️ MODAL PARA DETALLES -->
+  <div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetallesLabel">Detalles del Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <iframe id="detallesFrame"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // 🎵 CONTROL DE MÚSICA
+    document.getElementById("toggleMusicButton").addEventListener("click", () => {
+      let music = document.getElementById("backgroundMusic");
+      music.paused ? music.play() : music.pause();
+    });
+
+    // 🎨 MODAL DE DETALLES CON COLOR ALEATORIO
+    document.querySelectorAll(".detalles-btn").forEach(button => {
+      button.addEventListener("click", function() {
+        const id = this.dataset.id;
+        const token = this.dataset.token;
+        document.getElementById("detallesFrame").src = `detalles.php?id=${id}&token=${token}`;
+        document.getElementById("modalDetalles").style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 90%)`;
+        new bootstrap.Modal(document.getElementById("modalDetalles")).show();
+      });
+    });
+  </script>
 
 </body>
 </html>
