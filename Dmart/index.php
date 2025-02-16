@@ -1,4 +1,5 @@
-<?php 
+<?php
+session_start();
 require 'config/database.php';
 require 'config/config.php';
 
@@ -8,6 +9,9 @@ $con = $db->conectar();
 $sql = $con->prepare("SELECT id, nombre, precio FROM productos WHERE activo=1");
 $sql->execute();
 $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+// Verifica si el usuario es admin (para mostrar botón "Agregar Producto")
+$es_admin = isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin';
 ?>
 
 <!DOCTYPE html>
@@ -24,20 +28,78 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
   <link rel="stylesheet" type="text/css" href="css/estilos.css">
   
   <style>
-    /* 🎨 FONDO ANIMADO */
+    /* 🔹 FONDO DEGRADADO ANIMADO */
     body, html {
-      height: 100%;
+    height: 100%;
       margin: 0;
       font-family: 'Lobster', cursive;
       background: linear-gradient(-45deg, #ffdde1, #ee9ca7, #ffdde1, #ffebf7);
-      background-size: 400% 400%;
+      background-size: 0% 0%;
       animation: gradientBG 10s ease infinite;
+      overflow: hidden;  /*Bloquea el scroll hasta que termine la animación */
     }
 
     @keyframes gradientBG {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
+    }
+
+    /* 🔹 LOGO INICIAL ANIMADO */
+    #intro-logo {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: url('cinnamoroll.png') no-repeat center/cover;
+      z-index: -1;
+      animation: logoIntro 3s forwards;
+    }
+    @keyframes logoIntro {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(2); }
+      100% { transform: translate(-50%, -50%) scale(10); opacity: 0; }
+    }
+    /* 🔹 DISCO GIRATORIO DE FONDO */
+    #spinning-bg {
+      position: fixed;
+      width: 70%;
+      height: 70%;
+      top: 50%;
+      left: 50%;
+      background: url('cinnamoroll.png') no-repeat center/cover;
+      opacity: 0;
+      z-index: -1;
+      animation: spinBg 10s linear infinite, fadeIn 1s ease-out forwards 3s;
+    }
+    @keyframes spinBg {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 0.5; }
+    }
+
+    /* 🔹 NAVBAR ANIMADO */
+    #main-navbar, #admin-btn {
+      opacity: 0;
+      transform: translateY(-50px);
+      transition: opacity 1s ease-out, transform 1s ease-out;
+    }
+
+    /* 🔹 CONTENIDO PRINCIPAL */
+    #contenido {
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 1s ease-out, transform 1s ease-out;
+    }
+    .mostrar {
+      opacity: 1 !important;
+      transform: scale(1) !important;
     }
 
     /* 🏪 HEADER */
@@ -117,6 +179,7 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
     #modalDetalles iframe {
+      overflow: hidden; /*   Bloquea el scroll hasta que termine la animación */
       width: 100%;
       height: 500px;
       border: none;
@@ -124,8 +187,13 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
   </style>
 </head>
 <body>
+  <!-- 🔹 ANIMACIÓN INICIAL--> 
+  <div id="intro-logo"></div>
+  <!-- <img id="intro-logo" src="cinnamoroll.png" alt="Cinnamoroll Logo">-->
+  <div id="spinning-bg"></div>
+
   <!-- 🏠 HEADER -->
-  <header class="navbar navbar-expand-lg navbar-dark bg-sky-blue shadow-sm">
+  <header id="main-navbar" class="navbar navbar-expand-lg navbar-dark bg-sky-blue shadow-sm">
     <div class="container">
       <a href="#" class="navbar-brand">
         <img src="cinnamoroll.png" alt="Cinnamoroll" class="swing-image">
@@ -137,14 +205,18 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
       <div class="collapse navbar-collapse" id="navbarHeader">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a href="#" class="nav-link active">Catálogo</a>
+            <a href="#" class="nav-link active"></a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link active">Contacto</a>
+            <a href="#" class="nav-link active"></a>
           </li>
         </ul>
-        <button id="toggleMusicButton" class="btn btn-secondary">Apagar Música</button>
-        <a href="logout.php" class="btn btn-danger ms-2">Cerrar Sesión</a>
+        <button id="toggleMusicButton" class="btn btn-secondary">Apagar Música 🎵</button>
+
+        <?php if ($es_admin): ?>
+            <a id="admin-btn" class="btn btn-warning">Administrar Productos🛍️</a>
+        <?php endif; ?>
+        <a href="logout.php" class="btn btn-danger ms-2">Cerrar Sesión </a>
       </div>
     </div>
   </header>
@@ -156,7 +228,7 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
   </audio>
 
   <!-- 🛒 CONTENIDO PRINCIPAL -->
-  <main>
+  <main id="contenido">
     <div class="container content">
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
         <?php foreach ($resultado as $row) { ?>
@@ -175,7 +247,7 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
                   <button class="btn btn-primary btn-sm btn-hover detalles-btn" 
                           data-id="<?php echo $row['id']; ?>" 
                           data-token="<?php echo hash_hmac('sha1', $row['id'], KEY_TOKEN); ?>">Detalles</button>
-                  <button class="btn btn-success btn-sm btn-hover agregar-btn">Agregar</button>
+                  <button class="btn btn-success btn-sm btn-hover agregar-btn">Agregar 🛒</button>
                 </div>
               </div>
             </div>
@@ -201,9 +273,18 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
   </div>
 
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-  
   <script>
+    setTimeout(() => {
+      document.getElementById("contenido").classList.add("mostrar");
+      document.getElementById("main-navbar").style.opacity = "1";
+      document.getElementById("main-navbar").style.transform = "translateY(0)";
+      <?php if ($es_admin): ?> 
+        document.getElementById("admin-btn").style.opacity = "1";
+        document.getElementById("admin-btn").style.transform = "translateY(0)";
+      <?php endif; ?>
+      document.body.style.overflow = "auto"; // 🔥 Habilita el scroll después de la animación
+    }, 3000);
+
     // 🎵 CONTROL DE MÚSICA
     document.getElementById("toggleMusicButton").addEventListener("click", () => {
       let music = document.getElementById("backgroundMusic");
@@ -220,7 +301,19 @@ $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
         new bootstrap.Modal(document.getElementById("modalDetalles")).show();
       });
     });
-  </script>
 
+    // 🎨 MODAL DE DETALLES CON COLOR ALEATORIO
+    document.querySelectorAll(".btn-warning").forEach(button => {
+      button.addEventListener("click", function() {
+        const id = this.dataset.id;
+        const token = this.dataset.token;
+        document.getElementById("detallesFrame").src = `admin_productos.php`;
+        document.getElementById("modalDetalles").style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 90%)`;
+        new bootstrap.Modal(document.getElementById("modalDetalles")).show();
+      });
+    });
+  </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
 </body>
 </html>

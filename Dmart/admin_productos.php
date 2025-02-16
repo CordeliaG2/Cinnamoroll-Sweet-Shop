@@ -49,11 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nombre'])) {
         move_uploaded_file($_FILES['imagen_principal']['tmp_name'], $img_principal);
 
         // Subir imágenes secundarias
-//        foreach ($_FILES['imagenes_secundarias']['tmp_name'] as $key => $tmp_name) {
-//            $ext = pathinfo($_FILES['imagenes_secundarias']['name'][$key], PATHINFO_EXTENSION);
-//            $filename = $ruta_producto . 'secundaria_' . uniqid() . '.' . $ext;
-//            move_uploaded_file($tmp_name, $filename);
-//        }
+        foreach ($_FILES['imagenes_secundarias']['tmp_name'] as $key => $tmp_name) {
+            $ext = pathinfo($_FILES['imagenes_secundarias']['name'][$key], PATHINFO_EXTENSION);
+            $filename = $ruta_producto . 'secundaria_' . uniqid() . '.' . $ext;
+            move_uploaded_file($tmp_name, $filename);
+        }
 
         // Actualizar la base de datos con la imagen principal
         $sql = $con->prepare("UPDATE productos SET imagen = ? WHERE id = ?");
@@ -78,6 +78,9 @@ $productos = $sql->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrar Productos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
     <style>
         .bg-sky-blue {
                 background-color: #87CEEB; /* Color de fondo azul cielo */
@@ -85,6 +88,7 @@ $productos = $sql->fetchAll(PDO::FETCH_ASSOC);
 
         body {
             background-color: #f8f9fa;
+            font-family: 'Lobster', cursive;
         }
         .container {
             margin-top: 50px;
@@ -122,11 +126,11 @@ $productos = $sql->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <header class="navbar navbar-expand-lg navbar-dark bg-sky-blue shadow-sm">
         <div class="container">
-            <a href="index.php" class="navbar-brand">
+            <!-- <a href="index.php" class="navbar-brand">
                 <img src="cinnamoroll.png" alt="Cinnamoroll" class="swing-image">
                 <strong class="custom-font swing-text">Cinnamoroll Sweet Shop</strong>
             </a>
-            <a href="logout.php" class="btn btn-danger">Cerrar Sesión</a>
+            <a href="logout.php" class="btn btn-danger">Cerrar Sesión</a>-->
         </div>
     </header>
 
@@ -159,10 +163,10 @@ $productos = $sql->fetchAll(PDO::FETCH_ASSOC);
                 <label for="imagen_principal" class="form-label">Imagen Principal</label>
                 <input type="file" class="form-control" id="imagen_principal" name="imagen_principal" accept="image/*" required>
             </div>
-<!--            <div class="mb-3">
+            <div class="mb-3">
                 <label for="imagenes_secundarias" class="form-label">Imágenes Secundarias</label>
                 <input type="file" class="form-control" id="imagenes_secundarias" name="imagenes_secundarias[]" accept="image/*" multiple>
-            </div>-->
+            </div>
             <button type="submit" class="btn btn-success w-100">Registrar Producto</button>
         </form>
 
